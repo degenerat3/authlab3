@@ -3,40 +3,47 @@ from cryptography.fernet import Fernet
 import requests
 import json
 import hashlib
+import base64
 
 app = Flask(__name__)
-OAUTH_SERV = "http://127.0.0.1/endpoint"
+OAUTH_SERV = "http://10.140.100.103/token.php"
 
 def dec_pass(ct, key):
-    cs = Fernet(bytes(key))
-    pt = cs.decrypt(bytes(ct))
+    cs = Fernet(key)
+    pt = cs.decrypt(bytes(ct.encode()))
     return pt
 
 
 @app.route('/auth', methods=['GET','POST'])
 def authenticate():
     content = request.json
-    user = content['username']
+    username = content['username']
     password = content['password']
     key = content['key']
     pt_pass = dec_pass(password, key)
-    print(pt_pass)
-    encrypted_oath = oauth_work(username, password)
+    print("PASSWORD: " + str(pt_pass.decode()))
+    encrypted_oauth = oauth_work(username, pt_pass)
     return encrypted_oauth
 
 def oauth_work(username, password):
     tok = get_OA_Tok(username, password)
+    print("PT TOK: " + tok)
     hashed = hashlib.sha256(bytes(password)).digest()
-    cs = Fernet(bytes(hashed))
-    et = cs.encrypt(bytes(tok))
+    print("LENGTH" + str(len(hashed)))
+    key = base64.urlsafe_b64encode(hashed)
+    cs = Fernet(key)
+    et = cs.encrypt(tok.encode())
+    print("ENC TOK: " + et.decode())
     return et
 
 
 def get_OA_Tok(username, password):
-    cont = json.dumps({'username': username, 'password': password})
-    r=requests.post(OAUTH_SERV, data=cont, headers={'Content-Type': 'application/json'})
-    print(r.content)
-    return "success or failure data"
+    my_data = {'grant_type': 'client_credentials'}
+    r=requests.post(OAUTH_SERV, auth=(username,
+        password.decode()), data=my_data)
+    print("OAUTH RESPONSE: " + str(r.json()))
+    print("REC_TOKEN: " + r.json()['access_token'])
+    return r.json()['access_token']
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
