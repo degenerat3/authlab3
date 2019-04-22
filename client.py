@@ -12,5 +12,5 @@ r = requests.post('http://'+ip+':5000/auth', json={"username": username, "passwo
 token = r.content
 
 app = os.environ.get("app_serv")
-nr = requests.post('http://'+app+':5000/gimme', json={"password": password, "token": token})
+nr = requests.post('http://'+app+':5000/gimme', json={"token": token})
 print(nr.status_code)
