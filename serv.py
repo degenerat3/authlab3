@@ -6,7 +6,7 @@ import hashlib
 import base64
 
 app = Flask(__name__)
-OAUTH_SERV = "http://10.140.100.103/token.php"
+OAUTH_SERV = "http://10.140.100.103:5000/auth"
 
 def dec_pass(ct, key):
     cs = Fernet(key)
@@ -27,6 +27,8 @@ def authenticate():
 
 def oauth_work(username, password):
     tok = get_OA_Tok(username, password)
+    if tok == "fail":
+        return ""
     print("PT TOK: " + tok)
     hashed = hashlib.sha256(bytes(password)).digest()
     print("LENGTH" + str(len(hashed)))
@@ -38,12 +40,17 @@ def oauth_work(username, password):
 
 
 def get_OA_Tok(username, password):
+    """
     my_data = {'grant_type': 'client_credentials'}
     r=requests.post(OAUTH_SERV, auth=(username,
         password.decode()), data=my_data)
     print("OAUTH RESPONSE: " + str(r.json()))
     print("REC_TOKEN: " + r.json()['access_token'])
-    return r.json()['access_token']
+    """
+    my_data = {'username':username, 'password':password}
+    r=requests.post(OAUTH_SERV, json=my_data)
+    print("R CONTENT: " + r.text)
+    return r.text#r.json()['access_token']
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
