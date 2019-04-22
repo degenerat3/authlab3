@@ -21,8 +21,13 @@ cipher_suite = Fernet(key)
 cipher_text = cipher_suite.encrypt(password.encode())
 r = requests.post('http://'+ip+':5000/auth', json={"username": username, "password": cipher_text, "key": key})
 token = r.content
+print(token)
+if not token:
+	print("Empty token lmao")
+	exit()
 pt_tok = dec_tok(token, password)
 
 app = os.environ.get("app_serv")
 nr = requests.post('http://'+app+':5000/gimme', json={"token": pt_tok})
 print(nr.status_code)
+
